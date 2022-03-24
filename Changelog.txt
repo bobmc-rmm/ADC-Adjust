@@ -1,0 +1,159 @@
+/** \page changes_ AdcAdjust Changelog
+
+\par Doxygen Procedures
+- cd ~/pio/AdcAdjust (for example)
+- cmd: doxygen Doxyfile or doxywizard Doxyfile
+- see \ref notes_install_
+- Get Doxygen to generate html document set with schematics
+
+== changes_ */
+
+
+//--------------------------------------------------------------------
+/**  @mainpage 
+
+\anchor top_
+
+  \par AdcAdjust Introduction
+
+   AdcAdjust is a tool for evaluating ADC performance of various
+   MCUs. Measurement noise is reduced by averaging. Two methods are
+   provided for fixing measurement offset errors.  One, It is best to have
+   a reliable DVM to measure the input test voltage. Two, without
+   a DVM, a LM35 sensor and a thermometer can provide a known input
+   voltage. Then a sofware parameter can fix the error.
+
+   PlatformIO enables various MCUs to share the same code package.
+
+   Source code is formatted with Doxygen markup.  Doxygen is a very
+   good tool for tracing code.
+
+\par Technology
+
+ -  Arduino UNO variants, ESP32 variants
+ -  Optional LM35DZ temperature sensor for test
+ -  PlatformIO, Arduino and ESP-IDF MCU libraries
+ -  Doxygen
+ 
+.. | Information
+:--------- | :----------------------------
+Project    | AdcAdjust
+License    | Open Source
+Version    | (release candidate 01)
+Author     | Robert M. McIsaac; Software Designer
+Date       | 2022.mar.24
+<br>
+
+\note
+  - See \ref notes_install_ as starting point for program code
+  - See \ref changes_ for daily changelog
+
+end Mainpage 
+*/ 
+
+/** \page notes_install_ Installation
+
+<br>
+
+\verbatim
+
+   The AdcAdjust code can be copied into any folder. In addition to
+   'platformio.ini', a convenient 'Makefile' is provided which selects
+   the MCU and remembers pio commands to initialize, compile, and
+   upload the AdcAdjust firmware.
+   
+\endverbatim <br>
+ 
+\par MCU Boards
+
+ - USE_MCU=1; metro (mini328) enhanced UNO
+ - USE_MCU=2; nano33ble sense
+ - USE_MCU=3; featheresp32
+ - USE_MCU=4; esp32doit-devkit-v1-D 
+ - USE_MCU=5; esp32dev
+
+\verbatim
+  Edit the Makefile to select a board. Only one at a time is valid.
+  Example: "BRD := esp32dev"
+
+\endverbatim
+<br>
+ 
+\par Arduino MCU Board ADC Adjustment
+\verbatim
+   
+  Arduino Analog to digital conversion (ADC), is done in 3 steps:-
+
+  - A voltage is applied to a GPIO pin which is assigned to ADC input.
+  - A program reads the count of ADC steps
+  - The program calculates the voltage using a linear function
+
+  Voltage = ADC_VALUE * REFERENCE / MAX_ADC_STEPS
+
+  There is some internet debate about MAX_ADC_STEPS for a 10-bit
+  ADC. Some say it should be 1023 and others say 1024 is
+  best. However, AdcAdjust uses 1024 because there are 1024 states from
+  no-bits-set (zero) to all-bits-set (1023). This debate is probably
+  moot because of intrinsic error factors. See AN5250.
+
+  AdcAdjust replaces REFERENCE with OPERATING_VOLTAGE (.opV). This
+  is because the reference is only a nominal value (1.1vdc) that
+  varies between MCU boards. If the ADC printed voltage is higher than
+  the input, then reduce the REFERENCE parameter by a few
+  millivolts. For example, the REFERENCE for the MetroMini328 needed
+  to be (1.07vdc) in routine "metro_init".
+
+  \endverbatim \ref metro_init()<br>
+  https://www.nxp.com/docs/en/application-note/AN5250.pdf <br><br>
+
+\par ESP32 MCU Board ADC Adjustment
+\verbatim
+
+   AdcAdjust uses the Espressive Software Development Kit (SDK)
+   functions for ESP32 ADC. The application needs to call
+   "adc_sdk_sample()" which returns millivolts. If the ADC can be
+   plotted by "y=mx+b" then it seems the "b" term has an offset, which
+   should be zero. See "doit_read()" which subtracts 10 millivolts as an
+   example.
+
+\endverbatim \ref doit_read()
+<br><br>
+
+\par MCU Board ADC Test
+\verbatim
+
+   A KiCad schematic of the test voltage generator is provided. There
+   are two outputs:-- (0.7vdc) and (0.2vdc) connected one at a time to
+   the ADC GPIO pin.  These are arbitrary values.  Two points are
+   recommended because a check of only one point could work
+   accidently.
+
+\endverbatim
+\image html adc_testpoints.jpg
+<br>
+
+\verbatim
+
+   A reliable DVM is needed for exact measure of the test voltages. If
+   no DVM is available, the divider circuit is not needed. Optionally,
+   a LM35DZ can provide a voltage representing temperature. The
+   program parameters can be adjusted so that the printed temperature
+   (volts * 100) matches a nearby trusted thermometer.
+
+   The adc_print() prints four CSV columns:-- LineNumber, ADC value,
+   average ADC value, and average voltage. These values can be logged
+   in a CSV file and viewed in a spreadsheet. The following image is a
+   plot of ESP32 ADC values in columns B and C. Note that ESP32 has
+   periodic spikes which might be caused by WiFi activity. The Roll
+   Averaging compresses the ADC noise and spikes which can be ignored
+   by an application. The cleaned ADC voltage varies only 2
+   millivolts.
+   
+ \endverbatim 
+ \ref adc_print in file adc_mv.cpp <br>
+
+  \image html ESP32_ADC_test.jpg <br>
+
+  \image html ESP32_ADC_varies_ok.jpg
+ 
+*/
